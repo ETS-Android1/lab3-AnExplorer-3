@@ -39,6 +39,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.PowerManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
@@ -192,7 +193,7 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
 
     private RootsCache mRoots;
     private State mState;
-	private boolean mAuthenticated;
+    private boolean mAuthenticated;
     private FrameLayout mRateContainer;
     private boolean mActionMode;
     private FloatingActionsMenu mActionMenu;
@@ -209,7 +210,7 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
             setTheme(R.style.DocumentsTheme_Translucent);
         }
         setUpStatusBar();
-    	
+
 /*		StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder().detectAll()
 				.penaltyLog()
 				.build());
@@ -219,7 +220,7 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
 */
         super.onCreate(icicle);
 
-		mRoots = DocumentsApplication.getRootsCache(this);
+        mRoots = DocumentsApplication.getRootsCache(this);
 
         setResult(Activity.RESULT_CANCELED);
         setContentView(R.layout.activity);
@@ -306,10 +307,10 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
                 final Uri rootUri = getIntent().getData();
                 new RestoreRootTask(rootUri).executeOnExecutor(getCurrentExecutor());
             } else {
-            	if(isDownloadAuthority(getIntent())){
-            		onRootPicked(getDownloadRoot(), true);
-            	} else if(ConnectionUtils.isServerAuthority(getIntent())
-                || TransferHelper.isTransferAuthority(getIntent())){
+                if(isDownloadAuthority(getIntent())){
+                    onRootPicked(getDownloadRoot(), true);
+                } else if(ConnectionUtils.isServerAuthority(getIntent())
+                        || TransferHelper.isTransferAuthority(getIntent())){
                     RootInfo root = getIntent().getExtras().getParcelable(EXTRA_ROOT);
                     onRootPicked(root, true);
                 } else if(Utils.isQSTile(getIntent())){
@@ -323,7 +324,7 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
                     catch (SQLiteFullException e){
                         CrashReportingManager.logException(e);
                     }
-            	}
+                }
             }
         } else {
             onCurrentDirectoryChanged(ANIM_NONE);
@@ -413,15 +414,15 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
 
     private void initProtection() {
 
-		if(mAuthenticated || !SettingsActivity.isSecurityEnabled(this)){
-			return;
-		}
+        if(mAuthenticated || !SettingsActivity.isSecurityEnabled(this)){
+            return;
+        }
 
-		if(Utils.hasMarshmallow()) {
+        if(Utils.hasMarshmallow()) {
             SecurityHelper securityHelper = new SecurityHelper(this);
             securityHelper.authenticate("AnExplorer", "Use device pattern to continue");
         }
-	}
+    }
 
     private void buildDefaultState() {
         mState = new State();
@@ -446,7 +447,7 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
         if (mState.action == ACTION_OPEN || mState.action == ACTION_GET_CONTENT) {
             mState.allowMultiple = intent.getBooleanExtra(IntentUtils.EXTRA_ALLOW_MULTIPLE, false);
         }
-        
+
         if (mState.action == ACTION_GET_CONTENT || mState.action == ACTION_BROWSE) {
             mState.acceptMimes = new String[] { "*/*" };
             mState.allowMultiple = true;
@@ -461,7 +462,7 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
         mState.forceAdvanced = intent.getBooleanExtra(DocumentsContract.EXTRA_SHOW_ADVANCED	, false);
         mState.showAdvanced = mState.forceAdvanced
                 | SettingsActivity.getDisplayAdvancedDevices(this);
-        
+
         mState.rootMode = SettingsActivity.getRootMode(this);
     }
 
@@ -546,22 +547,22 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
                 }
             }
             else{
-            	RootInfo root = getCurrentRoot();
+                RootInfo root = getCurrentRoot();
                 if(null == root){
                     return null;
                 }
                 final Uri uri = DocumentsContract.buildDocumentUri(root.authority, root.documentId);
                 DocumentInfo result;
-				try {
-					result = DocumentInfo.fromUri(getContentResolver(), uri);
-	                if (result != null) {
-	                    mState.stack.push(result);
-	                    mState.stackTouched = true;
-	                }
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
+                try {
+                    result = DocumentInfo.fromUri(getContentResolver(), uri);
+                    if (result != null) {
+                        mState.stack.push(result);
+                        mState.stackTouched = true;
+                    }
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
                     CrashReportingManager.logException(e);
-				}
+                }
             }
 
             return null;
@@ -630,17 +631,17 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
             }
         }
     }
-    
+
     public void setInfoDrawerOpen(boolean open) {
-    	if(!mShowAsDialog){
-    		setRootsDrawerOpen(false);
+        if(!mShowAsDialog){
+            setRootsDrawerOpen(false);
             if (open) {
                 mDrawerLayoutHelper.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED, mInfoContainer);
                 mDrawerLayoutHelper.openDrawer(mInfoContainer);
             } else {
                 lockInfoContainter();
             }
-    	}
+        }
     }
 
     private boolean isRootsDrawerOpen() {
@@ -863,11 +864,11 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (mDrawerToggle != null) {
-        	if(mDrawerLayoutHelper.isDrawerOpen(mInfoContainer)){
+            if(mDrawerLayoutHelper.isDrawerOpen(mInfoContainer)){
                 mDrawerLayoutHelper.closeDrawer(mInfoContainer);
             }
             if(mDrawerToggle.onOptionsItemSelected(item)){
-            	return true;
+                return true;
             }
         }
         if(menuAction(item)){
@@ -933,6 +934,13 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
             Bundle params = new Bundle();
             AnalyticsManager.logEvent("app_exit");
             android.os.Process.killProcess(android.os.Process.myPid());
+            return true;
+        }  else if (id == R.id.menu_restart) {
+            final Intent intent = getPackageManager().getLaunchIntentForPackage(getPackageName());
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(intent);
+//            startActivity(new Intent(this, DocumentsActivity.class));
+            AnalyticsManager.logEvent("app_restart");
             return true;
         }  else if (id == R.id.menu_support) {
             openPurchaseActivity(this);
@@ -1173,9 +1181,9 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
             return mState.action == ACTION_BROWSE ? mRoots.getDefaultRoot() : mRoots.getStorageRoot();
         }
     }
-    
+
     public RootInfo getDownloadRoot() {
-    	return mRoots.getDownloadRoot();
+        return mRoots.getDownloadRoot();
     }
 
     public RootInfo getAppsBackupRoot() {
@@ -1207,9 +1215,9 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
     public State getDisplayState() {
         return mState;
     }
-    
+
     public boolean isShowAsDialog() {
-    	return mShowAsDialog;
+        return mShowAsDialog;
     }
 
     public boolean isCreateSupported() {
@@ -1225,7 +1233,7 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     public void onCurrentDirectoryChanged(int anim) {
-    	//FIX for java.lang.IllegalStateException ("Activity has been destroyed") 
+        //FIX for java.lang.IllegalStateException ("Activity has been destroyed")
         if(!Utils.isActivityAlive(DocumentsActivity.this)){
             return;
         }
@@ -1236,19 +1244,19 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
         //TODO : this has to be done nicely
         boolean isExtra = (null != root && !root.isServerStorage() && !root.isTransfer());
         if(cwd == null && isExtra){
-	        final Uri uri = DocumentsContract.buildDocumentUri(
-	                root.authority, root.documentId);
-	        DocumentInfo result;
-			try {
-				result = DocumentInfo.fromUri(getContentResolver(), uri);
-	            if (result != null) {
-	                mState.stack.push(result);
-	                mState.stackTouched = true;
-	                cwd = result;
-	            }
-			} catch (FileNotFoundException e) {
+            final Uri uri = DocumentsContract.buildDocumentUri(
+                    root.authority, root.documentId);
+            DocumentInfo result;
+            try {
+                result = DocumentInfo.fromUri(getContentResolver(), uri);
+                if (result != null) {
+                    mState.stack.push(result);
+                    mState.stackTouched = true;
+                    cwd = result;
+                }
+            } catch (FileNotFoundException e) {
                 CrashReportingManager.logException(e);
-			}
+            }
         }
         if(!SettingsActivity.getFolderAnimation(this)){
             anim = 0;
@@ -1256,7 +1264,7 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
 
         if (cwd == null) {
             // No directory means recents
-        	if (mState.action == ACTION_CREATE || mState.action == ACTION_OPEN_TREE) {
+            if (mState.action == ACTION_CREATE || mState.action == ACTION_OPEN_TREE) {
                 RecentsCreateFragment.show(fm);
             } else {
                 if(null != root && root.isHome()){
@@ -1300,8 +1308,8 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
         if (mState.action == ACTION_OPEN_TREE) {
             final PickFragment pick = PickFragment.get(fm);
             if (pick != null && null != cwd)  {
-                    final CharSequence displayName = (mState.stack.size() <= 1) && null != root
-                            ? root.title : cwd.displayName;
+                final CharSequence displayName = (mState.stack.size() <= 1) && null != root
+                        ? root.title : cwd.displayName;
                 pick.setPickTarget(cwd, displayName);
             }
         }
@@ -1488,9 +1496,9 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
             setResult(resultCode, data);
             finish();
         } else if(requestCode == CODE_SETTINGS){
-        	if(resultCode == RESULT_FIRST_USER){
-        		recreate();
-        	}
+            if(resultCode == RESULT_FIRST_USER){
+                recreate();
+            }
         }  else if(requestCode == ADD_STORAGE_REQUEST_CODE){
             SAFManager.onActivityResult(this, requestCode, resultCode, data);
         } else if(requestCode == UPLOAD_FILE) {
@@ -1522,7 +1530,7 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
                 move.setReplaceTarget(doc);
             }
         } else if (mState.action == ACTION_OPEN || mState.action == ACTION_GET_CONTENT){
-        	// Explicit file picked, return
+            // Explicit file picked, return
             new ExistingFinishTask(doc.derivedUri).executeOnExecutor(getCurrentExecutor());
         } else if (mState.action == ACTION_BROWSE) {
 
@@ -1546,13 +1554,13 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
             }
             if((MimePredicate.mimeMatches(MimePredicate.SPECIAL_MIMES, doc.mimeType)
                     || !Utils.isIntentAvailable(this, view)) && !Utils.hasNougat()){
-            	try {
-                	File file = new File(doc.path);
-    				view.setDataAndType(Uri.fromFile(file), doc.mimeType);
-				} catch (Exception e) {
-					view.setDataAndType(doc.derivedUri, doc.mimeType);
+                try {
+                    File file = new File(doc.path);
+                    view.setDataAndType(Uri.fromFile(file), doc.mimeType);
+                } catch (Exception e) {
+                    view.setDataAndType(doc.derivedUri, doc.mimeType);
                     CrashReportingManager.logException(e);
-				}
+                }
             }
 
             if(Utils.isIntentAvailable(this, view)){
@@ -1608,7 +1616,7 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
             }
         }
     }
-	
+
     public void onDocumentsPicked(List<DocumentInfo> docs) {
         if (mState.action == ACTION_OPEN || mState.action == ACTION_GET_CONTENT || mState.action == ACTION_BROWSE) {
             final int size = docs.size();
@@ -1635,7 +1643,7 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
     }
 
     public void onMoveRequested(ArrayList<DocumentInfo> docs, DocumentInfo toDoc, boolean deleteAfter) {
-    	new MoveTask(docs, toDoc, deleteAfter).executeOnExecutor(getCurrentExecutor());
+        new MoveTask(docs, toDoc, deleteAfter).executeOnExecutor(getCurrentExecutor());
     }
 
     private void saveStackBlocking() {
@@ -1659,7 +1667,7 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
         resolver.insert(RecentsProvider.buildResume(packageName), values);
     }
 
-	@TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     private void onFinished(Uri... uris) {
         Log.d(TAG, "onFinished() " + Arrays.toString(uris));
 
@@ -1673,10 +1681,10 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
                 clipData.addItem(new ClipData.Item(uris[i]));
             }
             if(Utils.hasJellyBean()){
-                intent.setClipData(clipData);	
+                intent.setClipData(clipData);
             }
             else{
-            	intent.setData(uris[0]);
+                intent.setData(uris[0]);
             }
         }
 
@@ -1722,12 +1730,12 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
                 client = DocumentsApplication.acquireUnstableProviderOrThrow(
                         resolver, cwd.derivedUri.getAuthority());
                 childUri = DocumentsContract.createDocument(
-                		resolver, cwd.derivedUri, mMimeType, mDisplayName);
+                        resolver, cwd.derivedUri, mMimeType, mDisplayName);
             } catch (Exception e) {
                 Log.w(TAG, "Failed to create document", e);
                 CrashReportingManager.logException(e);
             } finally {
-            	ContentProviderClientCompat.releaseQuietly(client);
+                ContentProviderClientCompat.releaseQuietly(client);
             }
 
             if (childUri != null) {
@@ -1755,7 +1763,7 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
     }
 
     private class ExistingFinishTask extends AsyncTask<Void, Void, Void> {
-		private final Uri[] mUris;
+        private final Uri[] mUris;
 
         public ExistingFinishTask(Uri... uris) {
             mUris = uris;
@@ -1791,11 +1799,11 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
             onFinished(mUri);
         }
     }
-    
+
     private class MoveTask extends AsyncTask<Void, Void, Boolean> {
         private final DocumentInfo toDoc;
         private final ArrayList<DocumentInfo> docs;
-		private boolean deleteAfter;
+        private boolean deleteAfter;
 
         public MoveTask(ArrayList<DocumentInfo> docs, DocumentInfo toDoc, boolean deleteAfter) {
             this.docs = docs;
@@ -1805,7 +1813,7 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
 
         @Override
         protected void onPreExecute() {
-        	setMovePending(true);
+            setMovePending(true);
         }
 
         @Override
@@ -1813,16 +1821,16 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
             final ContentResolver resolver = getContentResolver();
             final DocumentInfo cwd = null == toDoc ? getCurrentDirectory() : toDoc;
 
-			boolean hadTrouble = false;
-    		for (DocumentInfo doc : docs) {
+            boolean hadTrouble = false;
+            for (DocumentInfo doc : docs) {
 
-				if (!doc.isMoveSupported()) {
-    				Log.w(TAG, "Skipping " + doc);
-    				hadTrouble = true;
-    				continue;
-    			}
+                if (!doc.isMoveSupported()) {
+                    Log.w(TAG, "Skipping " + doc);
+                    hadTrouble = true;
+                    continue;
+                }
 
-    			try {
+                try {
                     if(deleteAfter) {
                         hadTrouble = DocumentsContract.moveDocument(resolver, doc.derivedUri, null,
                                 cwd.derivedUri) == null;
@@ -1830,12 +1838,12 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
                         hadTrouble = DocumentsContract.copyDocument(resolver, doc.derivedUri,
                                 cwd.derivedUri) == null;
                     }
-    			} catch (Exception e) {
-    				Log.w(TAG, "Failed to move " + doc);
-    				hadTrouble = true;
+                } catch (Exception e) {
+                    Log.w(TAG, "Failed to move " + doc);
+                    hadTrouble = true;
                     CrashReportingManager.logException(e);
-    			}
-    		}
+                }
+            }
 
             Bundle params2 = new Bundle();
             params2.putBoolean(FILE_MOVE, deleteAfter);
@@ -1880,8 +1888,8 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
         return (DocumentsActivity) fragment.getActivity();
     }
 
-	private final Handler handler = new Handler();
-	private Drawable oldBackground;
+    private final Handler handler = new Handler();
+    private Drawable oldBackground;
 
     private void changeActionBarColor() {
 
@@ -1889,47 +1897,47 @@ public class DocumentsActivity extends BaseActivity implements MenuItem.OnMenuIt
             return;
         }
 
-		int color = SettingsActivity.getPrimaryColor(this);
-		Drawable colorDrawable = new ColorDrawable(color);
+        int color = SettingsActivity.getPrimaryColor(this);
+        Drawable colorDrawable = new ColorDrawable(color);
 
-		if (oldBackground == null) {
+        if (oldBackground == null) {
             getSupportActionBar().setBackgroundDrawable(colorDrawable);
-		} else {
-			TransitionDrawable td = new TransitionDrawable(new Drawable[] { oldBackground, colorDrawable });
+        } else {
+            TransitionDrawable td = new TransitionDrawable(new Drawable[] { oldBackground, colorDrawable });
             getSupportActionBar().setBackgroundDrawable(td);
-			td.startTransition(200);
-		}
+            td.startTransition(200);
+        }
 
-		oldBackground = colorDrawable;
+        oldBackground = colorDrawable;
 
         setUpStatusBar();
-	}
-	
-	private Drawable.Callback drawableCallback = new Drawable.Callback() {
-		@Override
-		public void invalidateDrawable(Drawable who) {
-			getSupportActionBar().setBackgroundDrawable(who);
-		}
+    }
 
-		@Override
-		public void scheduleDrawable(Drawable who, Runnable what, long when) {
-			handler.postAtTime(what, when);
-		}
+    private Drawable.Callback drawableCallback = new Drawable.Callback() {
+        @Override
+        public void invalidateDrawable(Drawable who) {
+            getSupportActionBar().setBackgroundDrawable(who);
+        }
 
-		@Override
-		public void unscheduleDrawable(Drawable who, Runnable what) {
-			handler.removeCallbacks(what);
-		}
-	};
-	
-	public boolean getActionMode() {
-		return mActionMode;
-	}
+        @Override
+        public void scheduleDrawable(Drawable who, Runnable what, long when) {
+            handler.postAtTime(what, when);
+        }
 
-	public void setActionMode(boolean actionMode) {
-		mActionMode = actionMode;
+        @Override
+        public void unscheduleDrawable(Drawable who, Runnable what) {
+            handler.removeCallbacks(what);
+        }
+    };
+
+    public boolean getActionMode() {
+        return mActionMode;
+    }
+
+    public void setActionMode(boolean actionMode) {
+        mActionMode = actionMode;
         mToolbar.setVisibility(actionMode ? View.INVISIBLE : View.VISIBLE);
-	}
+    }
 
     public void invalidateMenu(){
         supportInvalidateOptionsMenu();

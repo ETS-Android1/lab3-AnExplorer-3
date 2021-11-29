@@ -75,6 +75,25 @@
                     app:drawableStart="@drawable/ic_star" />
 
                 <dev.dworks.apps.anexplorer.ui.CompatTextView
+                    android:id="@+id/action_update"
+                    style="@style/ButtonAppTheme"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:adjustViewBounds="true"
+                    android:drawablePadding="16dp"
+                    android:ellipsize="end"
+                    android:gravity="start|center_vertical"
+                    android:minHeight="?attr/actionBarSize"
+                    android:padding="16dp"
+                    android:text="Update to latest version"
+                    android:textAlignment="viewStart"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Subhead"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:visibility="visible"
+                    app:drawableStart="@drawable/ic_advanced_settings" />
+
+                <dev.dworks.apps.anexplorer.ui.CompatTextView
                     android:id="@+id/action_support"
                     style="@style/ButtonAppTheme"
                     android:layout_width="match_parent"

@@ -83,9 +83,11 @@ public class AboutActivity extends AboutVariantFlavour implements View.OnClickLi
 		TextView action_rate = (TextView)findViewById(R.id.action_rate);
 		TextView action_support = (TextView)findViewById(R.id.action_support);
 		TextView action_share = (TextView)findViewById(R.id.action_share);
+		TextView action_update = (TextView)findViewById(R.id.action_update);
 		TextView action_feedback = (TextView)findViewById(R.id.action_feedback);
 		TextView action_sponsor = (TextView)findViewById(R.id.action_sponsor);
 
+		action_update.setOnClickListener(this);
 		action_rate.setOnClickListener(this);
 		action_support.setOnClickListener(this);
 		action_share.setOnClickListener(this);
@@ -105,12 +107,12 @@ public class AboutActivity extends AboutVariantFlavour implements View.OnClickLi
 		}
 	}
 
-    @Override
-    public void startActivity(Intent intent) {
-        if(Utils.isIntentAvailable(this, intent)) {
-            super.startActivity(intent);
-        }
-    }
+	@Override
+	public void startActivity(Intent intent) {
+		if(Utils.isIntentAvailable(this, intent)) {
+			super.startActivity(intent);
+		}
+	}
 
 	@Override
 	public void onClick(View view) {
@@ -125,6 +127,10 @@ public class AboutActivity extends AboutVariantFlavour implements View.OnClickLi
 			case R.id.action_sponsor:
 				showAd();
 				AnalyticsManager.logEvent("app_sponsor");
+				break;
+			case R.id.action_update:
+				this.startActivity(new Intent(this,UpdateActivity.class));
+				AnalyticsManager.logEvent("app_update");
 				break;
 			case R.id.action_support:
 				if(Utils.isProVersion()){
